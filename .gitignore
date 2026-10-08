@@ -1,0 +1,10 @@
+node_modules/
+*.tgz
+coverage/
+.env
+.env.*
+!.env.example
+.pi/
+.pi-subagents/
+result
+result-*
