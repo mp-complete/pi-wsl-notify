@@ -6,6 +6,7 @@ import test from "node:test";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+const publishWorkflow = readFileSync(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
 
 test("package manifest exposes only the extension and uses host-provided peers", () => {
   assert.equal(manifest.name, "@mp-complete/pi-wsl-notify");
@@ -33,4 +34,14 @@ test("npm tarball allowlist excludes tests, dependency trees, credentials and lo
     "LICENSE", "NOTICE", "README.md", "extensions/wsl-notify.ts", "package.json",
   ]);
   assert.ok(packed[0].size < 20000, "package should remain small and dependency-free");
+});
+
+test("publishing uses a version-matched tag and npm trusted publishing", () => {
+  assert.match(publishWorkflow, /^on:\n  push:\n    tags:\n      - "v\*"$/m);
+  assert.match(publishWorkflow, /environment: npm/);
+  assert.match(publishWorkflow, /id-token: write/);
+  assert.match(publishWorkflow, /TAG: \$\{\{ github\.ref_name \}\}/);
+  assert.match(publishWorkflow, /process\.env\.TAG !==\s+`v\$\{version\}`/);
+  assert.match(publishWorkflow, /npm publish --provenance/);
+  assert.doesNotMatch(publishWorkflow, /NODE_AUTH_TOKEN|NPM_TOKEN/);
 });
